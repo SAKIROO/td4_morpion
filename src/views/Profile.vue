@@ -3,6 +3,7 @@ import api from '@/api'
 import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
 
 export default {
+  name: 'ProfileView',
   components: {
     ErrorsDisplay,
   },
@@ -52,82 +53,71 @@ export default {
 </script>
 
 <template>
-  <main class="profile">
-    <div class="header">
-      <h1>Mon profil</h1>
-      <RouterLink class="close" to="/home" aria-label="Retour à l'accueil">✕</RouterLink>
-    </div>
+  <main class="page">
+    <section class="panel card">
+      <div class="card-header">
+        <div class="avatar">{{ user?.name?.[0]?.toUpperCase() || 'U' }}</div>
+        <div>
+          <p class="eyebrow">Profil</p>
+          <h1 class="title-lg">Mon profil</h1>
+          <p class="subtitle">Visible par ton adversaire pendant la partie.</p>
+        </div>
+        <RouterLink class="btn ghost close" to="/home" aria-label="Retour à l'accueil">Retour</RouterLink>
+      </div>
 
-    <form v-if="user" class="form" @submit.prevent="saveProfile">
-      <label class="field">
-        <span>Surnom</span>
-        <input v-model="user.name" type="text" autocomplete="nickname" />
-      </label>
-      <label class="field">
-        <span>Email</span>
-        <input v-model="user.email" type="email" autocomplete="email" />
-      </label>
-      <button type="submit" :disabled="isSaving">Enregistrer</button>
-    </form>
+      <form v-if="user" class="form" @submit.prevent="saveProfile">
+        <label class="input-group">
+          <span>Surnom</span>
+          <input v-model="user.name" class="input" type="text" autocomplete="nickname" />
+          <small class="hint">Visible par ton adversaire</small>
+        </label>
+        <label class="input-group">
+          <span>Email</span>
+          <input v-model="user.email" class="input" type="email" autocomplete="email" />
+        </label>
+        <button type="submit" class="btn primary" :disabled="isSaving">Enregistrer</button>
+      </form>
 
-    <p v-else class="loading">Chargement du profil...</p>
+      <p v-else class="subtitle">Chargement du profil...</p>
 
-    <ErrorsDisplay :errors="errors" />
+      <ErrorsDisplay :errors="errors" />
+    </section>
   </main>
 </template>
 
 <style scoped>
-.profile {
-  max-width: 520px;
-  margin: 48px auto;
-  padding: 0 16px;
+.card {
+  max-width: 560px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
 }
 
-.header {
-  display: flex;
+.card-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
   align-items: center;
-  justify-content: space-between;
 }
 
-.close {
-  text-decoration: none;
-  font-size: 20px;
-  color: #111;
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(142, 243, 255, 0.4), rgba(255, 124, 229, 0.3));
+  color: var(--text);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
 }
 
 .form {
   display: grid;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 14px;
 }
 
-.field {
-  display: grid;
-  gap: 6px;
+.close {
+  height: fit-content;
 }
-
-input {
-  padding: 10px 12px;
-  border: 1px solid #222;
-  border-radius: 6px;
-}
-
-button {
-  padding: 10px 14px;
-  border: 1px solid #111;
-  background: #111;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.loading {
-  margin-top: 24px;
-}
-
 </style>

@@ -1,7 +1,12 @@
 <script>
 import api from '@/api'
+import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
 
 export default {
+  name: 'HomeView',
+  components: {
+    ErrorsDisplay,
+  },
   data() {
     return {
       errors: [],
@@ -30,61 +35,108 @@ export default {
 </script>
 
 <template>
-  <main class="home">
-    <h1>Morpion</h1>
-    <div class="actions">
-      <button type="button" class="primary" :disabled="isCreating" @click="createGame">
-        Nouvelle partie
-      </button>
-      <RouterLink class="secondary" to="/join">Rejoindre une partie</RouterLink>
-      <RouterLink class="secondary" to="/profile">Mon profil</RouterLink>
-    </div>
-    <ul v-if="errors.length" class="errors">
-      <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
-    </ul>
+  <main class="page">
+    <section class="panel hero">
+      <header>
+        <p class="eyebrow">Morpion en ligne</p>
+        <h1 class="title-lg">Morpion</h1>
+        <p class="subtitle">Joue en 1v1 en temps réel et partage le code de partie.</p>
+      </header>
+
+      <div class="actions-row">
+        <button type="button" class="btn primary" :disabled="isCreating" @click="createGame">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M12 2v4m0 12v4m10-10h-4M6 12H2m14.95-6.95l-2.83 2.83M7.88 16.12l-2.83 2.83m0-15.66l2.83 2.83m8.24 8.24l2.83 2.83"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+          Nouvelle partie
+        </button>
+        <RouterLink class="btn secondary" to="/join">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M5 12h14m-4-4l4 4l-4 4"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Rejoindre une partie
+        </RouterLink>
+        <RouterLink class="btn secondary" to="/profile">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M12 12a4 4 0 1 0-4-4a4 4 0 0 0 4 4Zm0 2c-3.31 0-6 1.79-6 4v1h12v-1c0-2.21-2.69-4-6-4Z"
+            />
+          </svg>
+          Mon profil
+        </RouterLink>
+      </div>
+
+      <div class="tip">
+        <span class="tip-icon">🎯</span>
+        <span>Astuce : partage le code de partie à ton adversaire.</span>
+      </div>
+
+      <ErrorsDisplay :errors="errors" />
+    </section>
   </main>
 </template>
 
 <style scoped>
-.home {
-  max-width: 480px;
-  margin: 48px auto;
-  padding: 0 16px;
-  text-align: center;
-}
-
-.actions {
+.hero {
+  max-width: 560px;
+  margin: 0 auto;
   display: grid;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
 }
 
-.primary,
-.secondary {
-  display: inline-block;
-  padding: 12px 16px;
-  border: 1px solid #222;
-  border-radius: 6px;
-  text-decoration: none;
-  color: #111;
-  background: #fff;
-  cursor: pointer;
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
 }
 
-.primary {
-  background: #111;
-  color: #fff;
+.tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.tip-icon {
+  font-size: 18px;
 }
 
-.errors {
-  margin-top: 16px;
-  padding-left: 18px;
-  color: #b00020;
-  text-align: left;
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.05) 40%,
+        transparent 70%
+      )
+      no-repeat right center,
+    radial-gradient(circle at 85% 40%, rgba(255, 255, 255, 0.06), transparent 45%);
+  pointer-events: none;
+  opacity: 0.45;
 }
 </style>

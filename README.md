@@ -1,44 +1,28 @@
-# morpion-tmp-app
+# Morpion (TD4 VueJS)
 
-This template should help get you started developing with Vue 3 in Vite.
+Application Vue 3 / Vue Router qui implémente le TD4 : création de parties, rejoint/joue via websockets et édition du profil.
 
-## Recommended IDE Setup
+## Pré-requis
+- Node 20+
+- Une clé API personnelle (`/api/apikeys` sur https://morpion-api.edu.netlor.fr avec un `name` et un `email`). Chaque développeur doit saisir sa propre clé.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Configuration
+1. Copier le fichier d'exemple : `cp .env.example .env`.
+2. Remplacer `VITE_MORPION_API_KEY` par votre clé retournée par l'API.
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
+## Installation
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
-
+## Lancement en développement
 ```sh
 npm run dev
 ```
+Le serveur Vite affiche ensuite l'URL (par défaut http://localhost:5173). Ouvrir deux onglets/navigateurs pour simuler deux joueurs.
 
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
+## Vérification
 ```sh
 npm run lint
 ```
+Lint Vue/JS selon les règles vues en cours.

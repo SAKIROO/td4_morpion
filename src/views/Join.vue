@@ -3,6 +3,7 @@ import api from '@/api'
 import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
 
 export default {
+  name: 'JoinView',
   components: {
     ErrorsDisplay,
   },
@@ -35,72 +36,78 @@ export default {
 </script>
 
 <template>
-  <main class="join">
-    <div class="header">
-      <h1>Rejoindre une partie</h1>
-      <RouterLink class="close" to="/home" aria-label="Retour à l'accueil">✕</RouterLink>
-    </div>
+  <main class="page">
+    <section class="panel card">
+      <div class="card-header">
+        <div class="avatar">↗</div>
+        <div>
+          <p class="eyebrow">Rejoindre</p>
+          <h1 class="title-lg">Rejoindre une partie</h1>
+          <p class="subtitle">Entre le code partagé par ton adversaire.</p>
+        </div>
+        <RouterLink class="btn ghost close" to="/home" aria-label="Retour à l'accueil">Retour</RouterLink>
+      </div>
 
-    <form class="form" @submit.prevent="joinGame">
-      <label class="field">
-        <span>Code</span>
-        <input v-model.trim="code" type="text" autocapitalize="characters" />
-      </label>
-      <button type="submit" :disabled="isJoining">Rejoindre</button>
-    </form>
+      <form class="form" @submit.prevent="joinGame">
+        <label class="input-group">
+          <span>Code</span>
+          <input
+            v-model.trim="code"
+            type="text"
+            class="input code-input"
+            autocapitalize="characters"
+            maxlength="6"
+            placeholder="Ex: V9M53Z"
+          />
+          <small class="hint">Ex: N7UJBE</small>
+        </label>
+        <button type="submit" class="btn primary" :disabled="isJoining || !code">Rejoindre</button>
+      </form>
 
-    <ErrorsDisplay :errors="errors" />
+      <ErrorsDisplay :errors="errors" />
+    </section>
   </main>
 </template>
 
 <style scoped>
-.join {
+.card {
   max-width: 520px;
-  margin: 48px auto;
-  padding: 0 16px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
 }
 
-.header {
-  display: flex;
+.card-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
   align-items: center;
-  justify-content: space-between;
 }
 
-.close {
-  text-decoration: none;
-  font-size: 20px;
-  color: #111;
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(120deg, rgba(124, 92, 255, 0.35), rgba(34, 211, 238, 0.25));
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .form {
   display: grid;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 14px;
 }
 
-.field {
-  display: grid;
-  gap: 6px;
+.code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  text-align: center;
+  font-family: 'Space Mono', 'Inter', monospace;
 }
 
-input {
-  padding: 10px 12px;
-  border: 1px solid #222;
-  border-radius: 6px;
+.close {
+  height: fit-content;
 }
-
-button {
-  padding: 10px 14px;
-  border: 1px solid #111;
-  background: #111;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 </style>
