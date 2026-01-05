@@ -1,28 +1,43 @@
 # Morpion (TD4 VueJS)
 
-Application Vue 3 / Vue Router qui implÃ©mente le TD4 : crÃ©ation de parties, rejoint/joue via websockets et Ã©dition du profil.
+Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et édition du profil.
 
-## PrÃ©-requis
-- Node 20+
-- Une clÃ© API personnelle (`/api/apikeys` sur https://morpion-api.edu.netlor.fr avec un `name` et un `email`). Chaque dÃ©veloppeur doit saisir sa propre clÃ©.
+## Pré-requis
+- Node.js 20+ (voir `package.json` > `engines`)
+- npm (fourni avec Node)
+- Une clé API personnelle : `/api/apikeys` sur https://morpion-api.edu.netlor.fr (renseigner `name` et `email`)
 
-## Configuration
-1. Copier le fichier d'exempleÂ : `cp .env.example .env`.
-2. Remplacer `VITE_MORPION_API_KEY` par votre clÃ© retournÃ©e par l'API.
+## Configuration de la clé API
+1. Créer un fichier `.env` à la racine du projet s'il n'existe pas.
+2. Ajouter votre clé :
+```env
+VITE_MORPION_API_KEY=VOTRE_CLE_ICI
+```
+Chaque développeur doit utiliser sa propre clé.
 
 ## Installation
 ```sh
 npm install
 ```
 
-## Lancement en dÃ©veloppement
+## Lancement en développement
 ```sh
 npm run dev
 ```
-Le serveur Vite affiche ensuite l'URL (par dÃ©faut http://localhost:5173). Ouvrir deux onglets/navigateurs pour simuler deux joueurs.
+Vite affiche ensuite l'URL locale (par défaut `http://localhost:5173`).
+Ouvrir deux onglets/navigateurs pour simuler deux joueurs.
 
-## VÃ©rification
+## Construction et prévisualisation (optionnel)
+```sh
+npm run build
+npm run preview
+```
+
+## Lint
 ```sh
 npm run lint
 ```
-Lint Vue/JS selon les rÃ¨gles vues en cours.
+
+## Dépannage rapide
+- Si la clé API est invalide, regénérez-la sur https://morpion-api.edu.netlor.fr
+- En cas d'erreur de version Node, mettez à jour Node.js pour respecter `engines`
