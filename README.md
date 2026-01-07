@@ -50,15 +50,14 @@ npm run lint
 ```
 
 ## Captures d'écran
-Ajoutez vos images ici (chemins proposés) :
-- Accueil : `docs/screenshots/01-home.png`
-- Partie en attente (création / code) : `docs/screenshots/02-lobby.png`
-- Partie en cours : `docs/screenshots/03-game.png`
 
-Exemple d'insertion (remplacera automatiquement quand les fichiers existent) :
-
+Page d'acceuil
 ![Accueil](docs/screenshots/01-home.png)
+---------------------------------------------------
+Lobby de matchmaking
 ![Partie en attente](docs/screenshots/02-lobby.png)
+---------------------------------------------------
+Partie en cours
 ![Partie en cours](docs/screenshots/03-game.png)
 
 ## Dépannage rapide
