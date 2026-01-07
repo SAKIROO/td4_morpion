@@ -38,7 +38,7 @@ VITE_MORPION_API_KEY='VOTRE_AUTRE_CLE' npm run dev -- --port 5174
 ```
 Ouvrir `http://localhost:5174` pour le second joueur.
 
-## Construction et pr�visualisation (optionnel)
+## Construction et prévisualisation (optionnel)
 ```sh
 npm run build
 npm run preview
