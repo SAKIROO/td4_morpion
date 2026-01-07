@@ -59,6 +59,7 @@ Lobby de matchmaking
 ---------------------------------------------------
 Partie en cours
 ![Partie en cours](docs/screenshots/03-game.png)
+---------------------------------------------------
 
 ## Dépannage rapide
 - Si la clé API est invalide, régénérez-la sur https://morpion-api.edu.netlor.fr
