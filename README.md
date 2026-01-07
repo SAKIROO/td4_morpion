@@ -1,6 +1,6 @@
 # Morpion (TD4 VueJS)
 
-Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et �dition du profil.
+Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et édition du profil.
 
 ## Aperçu
 - UI/UX moderne (glassmorphism, layout dense, responsive)
@@ -12,7 +12,7 @@ Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jou
 - npm (fourni avec Node)
 - Une clé API personnelle : `/api/apikeys` sur https://morpion-api.edu.netlor.fr (renseigner `name` et `email`)
 
-## Configuration de la cl� API
+## Configuration de la clé API
 1. Créer un fichier `.env` à la racine du projet s'il n'existe pas.
 2. Ajouter votre clé :
 ```env
