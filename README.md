@@ -1,33 +1,44 @@
 # Morpion (TD4 VueJS)
 
-Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et édition du profil.
+Application Vue 3 / Vue Router pour le TD4 : crÃ©ation de parties, rejoindre/jouer via WebSockets et ï¿½dition du profil.
 
-## Pré-requis
+## Aperï¿½u
+- UI/UX moderne (glassmorphism, layout dense, responsive)
+- Temps rÃ©el via WebSockets + fallback polling
+- Profils joueurs + noms dynamiques
+
+## Prï¿½-requis
 - Node.js 20+ (voir `package.json` > `engines`)
 - npm (fourni avec Node)
-- Une clé API personnelle : `/api/apikeys` sur https://morpion-api.edu.netlor.fr (renseigner `name` et `email`)
+- Une clÃ© API personnelle : `/api/apikeys` sur https://morpion-api.edu.netlor.fr (renseigner `name` et `email`)
 
-## Configuration de la clé API
-1. Créer un fichier `.env` à la racine du projet s'il n'existe pas.
-2. Ajouter votre clé :
+## Configuration de la clï¿½ API
+1. CrÃ©er un fichier `.env` Ã  la racine du projet s'il n'existe pas.
+2. Ajouter votre clÃ© :
 ```env
 VITE_MORPION_API_KEY=VOTRE_CLE_ICI
 ```
-Chaque développeur doit utiliser sa propre clé.
+Chaque dï¿½veloppeur doit utiliser sa propre clï¿½.
 
 ## Installation
 ```sh
 npm install
 ```
 
-## Lancement en développement
+## Lancement en dÃ©veloppement
 ```sh
 npm run dev
 ```
-Vite affiche ensuite l'URL locale (par défaut `http://localhost:5173`).
+Vite affiche ensuite l'URL locale (par dï¿½faut `http://localhost:5173`).
 Ouvrir deux onglets/navigateurs pour simuler deux joueurs.
 
-## Construction et prévisualisation (optionnel)
+### Lancer un 2e joueur (autre clï¿½ API)
+```sh
+VITE_MORPION_API_KEY='VOTRE_AUTRE_CLE' npm run dev -- --port 5174
+```
+Ouvrir `http://localhost:5174` pour le second joueur.
+
+## Construction et prï¿½visualisation (optionnel)
 ```sh
 npm run build
 npm run preview
@@ -38,6 +49,18 @@ npm run preview
 npm run lint
 ```
 
-## Dépannage rapide
-- Si la clé API est invalide, regénérez-la sur https://morpion-api.edu.netlor.fr
-- En cas d'erreur de version Node, mettez à jour Node.js pour respecter `engines`
+## Captures d'Ã©cran
+Ajoutez vos images ici (chemins proposÃ©s) :
+- Accueil : `docs/screenshots/01-home.png`
+- Partie en attente (crÃ©ation / code) : `docs/screenshots/02-lobby.png`
+- Partie en cours : `docs/screenshots/03-game.png`
+
+Exemple d'insertion (remplacera automatiquement quand les fichiers existent) :
+
+![Accueil](docs/screenshots/01-home.png)
+![Partie en attente](docs/screenshots/02-lobby.png)
+![Partie en cours](docs/screenshots/03-game.png)
+
+## Dï¿½pannage rapide
+- Si la clÃ© API est invalide, rÃ©gÃ©nÃ©rez-la sur https://morpion-api.edu.netlor.fr
+- En cas d'erreur de version Node, mettez Ã  jour Node.js pour respecter `engines`
