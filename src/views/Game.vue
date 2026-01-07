@@ -1,11 +1,24 @@
 <script>
 import api from '@/api'
 import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import CodePill from '@/components/ui/CodePill.vue'
+import { useToast } from '@/composables/useToast'
+import { Copy, DoorOpen, Loader2 } from 'lucide-vue-next'
 
 export default {
   name: 'GameView',
   components: {
     ErrorsDisplay,
+    BaseCard,
+    BaseButton,
+    BaseBadge,
+    CodePill,
+    Copy,
+    DoorOpen,
+    Loader2,
   },
   data() {
     return {
@@ -27,6 +40,7 @@ export default {
       ws: null,
       isPlaying: false,
       pollIntervalId: null,
+      toast: useToast(),
     }
   },
   computed: {
@@ -36,12 +50,98 @@ export default {
     board() {
       return this.rawBoard.map((row) => row.map((cell) => this.formatCell(cell)))
     },
-    currentPlayerName() {
-      const nextId = this.game?.next_player_id
-      if (!nextId) return ''
-      if (this.game?.player?.id === nextId) return this.game.player.name || 'Joueur 1'
-      if (this.game?.opponent?.id === nextId) return this.game.opponent.name || 'Joueur 2'
+    playerId() {
+      return this.getRoleId('player')
+    },
+    opponentId() {
+      return this.getRoleId('opponent')
+    },
+    nextPlayerId() {
+      const direct =
+        this.game?.next_player_id ??
+        this.game?.nextPlayerId ??
+        this.game?.next_player?.id ??
+        this.game?.current_player_id ??
+        this.game?.currentPlayerId ??
+        this.game?.current_player?.id ??
+        this.game?.turn_player_id ??
+        this.game?.turnPlayerId ??
+        this.game?.turn?.player_id ??
+        null
+      if (direct) return direct
+      const nextPlayer = this.game?.next_player
+      if (typeof nextPlayer === 'number') return nextPlayer
+      if (typeof nextPlayer === 'string') {
+        const trimmed = nextPlayer.trim()
+        if (trimmed && !Number.isNaN(Number(trimmed))) return Number(trimmed)
+      }
+      return null
+    },
+    selfName() {
+      return this.resolveName(this.user)
+    },
+    localRole() {
+      if (!this.userId) return ''
+      if (this.idsMatch(this.playerId, this.userId)) return 'player'
+      if (this.idsMatch(this.opponentId, this.userId)) return 'opponent'
+      if (!this.playerId && this.opponentId && !this.idsMatch(this.opponentId, this.userId)) {
+        return 'player'
+      }
+      if (!this.opponentId && this.playerId && !this.idsMatch(this.playerId, this.userId)) {
+        return 'opponent'
+      }
       return ''
+    },
+    playerName() {
+      if (!this.game?.opponent && this.selfName) {
+        return this.selfName
+      }
+      return this.resolveRoleName('player', 'Joueur 1')
+    },
+    opponentName() {
+      if (!this.game?.opponent && !this.game?.opponent_id && !this.game?.opponentId) {
+        return 'En attente'
+      }
+      return this.resolveRoleName('opponent', 'Joueur 2')
+    },
+    adversaryName() {
+      if (this.localRole === 'player') return this.opponentName
+      if (this.localRole === 'opponent') return this.playerName
+      return this.opponentName
+    },
+    playerSymbol() {
+      return this.resolveRoleSymbol('player', this.playerId) || 'X'
+    },
+    opponentSymbol() {
+      return this.resolveRoleSymbol('opponent', this.opponentId) || 'O'
+    },
+    userSymbol() {
+      if (this.localRole === 'player') return this.playerSymbol
+      if (this.localRole === 'opponent') return this.opponentSymbol
+      return ''
+    },
+    currentPlayerName() {
+      const nextId = this.nextPlayerId
+      if (nextId) {
+        if (this.idsMatch(this.playerId, nextId)) return this.playerName
+        if (this.idsMatch(this.opponentId, nextId)) return this.opponentName
+        if (nextId === 1) return this.playerName
+        if (nextId === 2) return this.opponentName
+      }
+      return (
+        this.resolveNameDeep(this.game?.next_player) ||
+        this.resolveNameDeep(this.game?.current_player) ||
+        ''
+      )
+    },
+    turnTitle() {
+      if (this.isPlayerTurn) return 'À votre tour'
+      if (this.currentPlayerName) return `Au tour de ${this.currentPlayerName}`
+      return 'Au tour de ...'
+    },
+    currentTurnValue() {
+      if (this.isPlayerTurn) return 'Vous'
+      return this.currentPlayerName || '...'
     },
     isFinished() {
       return this.game?.status === 2
@@ -49,8 +149,8 @@ export default {
     winnerName() {
       const winnerId = this.game?.winner_id
       if (!winnerId) return ''
-      if (this.game?.player?.id === winnerId) return this.game.player.name || 'Joueur 1'
-      if (this.game?.opponent?.id === winnerId) return this.game.opponent.name || 'Joueur 2'
+      if (this.idsMatch(this.playerId, winnerId)) return this.playerName
+      if (this.idsMatch(this.opponentId, winnerId)) return this.opponentName
       return ''
     },
     userId() {
@@ -58,10 +158,233 @@ export default {
     },
     isPlayerTurn() {
       if (!this.game || !this.game.opponent || this.isFinished || !this.userId) return false
-      return this.game.next_player_id === this.userId
+      if (this.idsMatch(this.nextPlayerId, this.userId)) return true
+      if (this.nextPlayerId === 1 && this.localRole === 'player') return true
+      if (this.nextPlayerId === 2 && this.localRole === 'opponent') return true
+      return false
     },
   },
   methods: {
+    getRoleId(role) {
+      const roleValue = this.game?.[role]
+      if (typeof roleValue === 'number') return roleValue
+      if (typeof roleValue === 'string') {
+        const trimmed = roleValue.trim()
+        if (!trimmed) return null
+        const looksLikeId = /^[0-9a-fA-F-]{8,}$/.test(trimmed) || !Number.isNaN(Number(trimmed))
+        if (looksLikeId) return trimmed
+      }
+      return (
+        roleValue?.id ??
+        this.game?.[`${role}_id`] ??
+        this.game?.[`${role}Id`] ??
+        null
+      )
+    },
+    idsMatch(a, b) {
+      if (a === null || a === undefined || b === null || b === undefined) return false
+      return String(a) === String(b)
+    },
+    resolveName(value) {
+      if (!value) return ''
+      if (typeof value === 'string') return value.trim()
+      if (typeof value !== 'object') return ''
+      const candidate =
+        value.name ||
+        value.nickname ||
+        value.username ||
+        value.pseudo ||
+        value.displayName ||
+        value.display_name ||
+        value.fullName ||
+        value.full_name
+      if (typeof candidate === 'string') {
+        return candidate.trim()
+      }
+      const first =
+        value.first_name ||
+        value.firstName ||
+        value.firstname ||
+        value.given_name ||
+        value.givenName
+      const last =
+        value.last_name || value.lastName || value.lastname || value.family_name || value.familyName
+      if (typeof first === 'string' || typeof last === 'string') {
+        return [first, last].filter(Boolean).join(' ').trim()
+      }
+      return ''
+    },
+    isProbablyId(value) {
+      if (typeof value !== 'string') return false
+      const trimmed = value.trim()
+      if (!trimmed) return false
+      if (!Number.isNaN(Number(trimmed))) return true
+      return /^[0-9a-fA-F-]{8,}$/.test(trimmed)
+    },
+    resolveNameDeep(value) {
+      return (
+        this.resolveName(value) ||
+        this.resolveName(value?.user) ||
+        this.resolveName(value?.user?.profile) ||
+        this.resolveName(value?.player) ||
+        this.resolveName(value?.profile) ||
+        this.resolveName(value?.profile?.user) ||
+        this.resolveName(value?.account) ||
+        this.resolveName(value?.owner)
+      )
+    },
+    findNameInPool(pool, id) {
+      if (!pool) return ''
+      if (pool && typeof pool === 'object' && !Array.isArray(pool)) {
+        const direct = id ? pool[id] || pool[String(id)] : null
+        const directName = this.resolveNameDeep(direct)
+        if (directName && !this.isProbablyId(directName)) return directName
+        return this.findNameInPool(Object.values(pool), id)
+      }
+      if (!Array.isArray(pool) || !id) return ''
+      const match = pool.find((entry) => {
+        const entryId =
+          entry?.id ??
+          entry?.user_id ??
+          entry?.userId ??
+          entry?.player_id ??
+          entry?.playerId ??
+          entry?.account_id ??
+          entry?.accountId ??
+          entry?.uuid ??
+          entry?.uid
+        return this.idsMatch(entryId, id)
+      })
+      if (!match) return ''
+      const name = this.resolveNameDeep(match)
+      if (name && !this.isProbablyId(name)) return name
+      return ''
+    },
+    collectParticipantNames() {
+      const names = []
+      const pushName = (value) => {
+        const name = this.resolveNameDeep(value)
+        if (name && !this.isProbablyId(name)) names.push(name)
+      }
+      pushName(this.game?.player)
+      pushName(this.game?.opponent)
+      pushName(this.game?.creator)
+      pushName(this.game?.owner)
+      pushName(this.game?.host)
+      pushName(this.game?.player_name)
+      pushName(this.game?.playerName)
+      pushName(this.game?.opponent_name)
+      pushName(this.game?.opponentName)
+      pushName(this.game?.creator_name)
+      pushName(this.game?.creatorName)
+      pushName(this.game?.owner_name)
+      pushName(this.game?.ownerName)
+
+      const pools = [
+        this.game?.players,
+        this.game?.users,
+        this.game?.participants,
+        this.game?.members,
+        this.game?.player_list,
+        this.game?.playerList,
+      ]
+      pools.forEach((pool) => {
+        if (!pool) return
+        if (Array.isArray(pool)) {
+          pool.forEach((entry) => pushName(entry))
+        } else if (typeof pool === 'object') {
+          Object.values(pool).forEach((entry) => pushName(entry))
+        }
+      })
+
+      return [...new Set(names)]
+    },
+    otherParticipantName() {
+      const names = this.collectParticipantNames()
+      if (!names.length) return ''
+      const selfName = this.selfName?.toLowerCase?.() || ''
+      const other = names.find((name) => name.toLowerCase() !== selfName)
+      return other || ''
+    },
+    lookupNameById(id) {
+      const pools = [
+        this.game?.players,
+        this.game?.users,
+        this.game?.participants,
+        this.game?.members,
+        this.game?.player_list,
+        this.game?.playerList,
+      ]
+      for (const pool of pools) {
+        const name = this.findNameInPool(pool, id)
+        if (name) return name
+      }
+      return ''
+    },
+    resolveSymbol(value) {
+      if (value === null || value === undefined) return ''
+      if (typeof value === 'number') {
+        if (value === 1) return 'X'
+        if (value === 2) return 'O'
+        return String(value)
+      }
+      if (typeof value !== 'string') return ''
+      const trimmed = value.trim()
+      if (!trimmed) return ''
+      const upper = trimmed.toUpperCase()
+      if (upper === '1') return 'X'
+      if (upper === '2') return 'O'
+      return upper
+    },
+    resolveRoleName(role, fallback) {
+      const roleData = this.game?.[role]
+      const roleId = this.getRoleId(role)
+      const direct = this.resolveNameDeep(roleData)
+      if (direct && !this.isProbablyId(direct)) return direct
+      const fromGame =
+        this.resolveName(this.game?.[`${role}_name`]) ||
+        this.resolveName(this.game?.[`${role}Name`])
+      if (fromGame && !this.isProbablyId(fromGame)) return fromGame
+      const fromPool = this.lookupNameById(roleId)
+      if (fromPool) return fromPool
+      if (this.selfName && this.localRole === role) {
+        return this.selfName
+      }
+      if (this.localRole && this.localRole !== role) {
+        const otherName = this.otherParticipantName()
+        if (otherName) return otherName
+      }
+      return fallback
+    },
+    resolveRoleSymbol(role, playerId) {
+      const candidates = [
+        this.game?.[`${role}_symbol`],
+        this.game?.[`${role}Symbol`],
+        this.game?.[`${role}_sign`],
+        this.game?.[`${role}Sign`],
+        this.game?.[`${role}_mark`],
+        this.game?.[`${role}Mark`],
+        this.game?.[role]?.symbol,
+        this.game?.[role]?.sign,
+        this.game?.[role]?.mark,
+      ]
+      for (const candidate of candidates) {
+        const resolved = this.resolveSymbol(candidate)
+        if (resolved) return resolved
+      }
+
+      const symbolMap =
+        this.game?.symbols ||
+        this.game?.player_symbols ||
+        this.game?.playerSymbols ||
+        this.game?.marks
+      if (symbolMap && playerId) {
+        const mapped = symbolMap[playerId] ?? symbolMap[String(playerId)]
+        const resolved = this.resolveSymbol(mapped)
+        if (resolved) return resolved
+      }
+      return ''
+    },
     emptyGrid() {
       return [
         ['', '', ''],
@@ -392,7 +715,10 @@ export default {
         this.setBoardFromGame(payload)
         if (!this.hasGridContent(this.boardStateRaw)) {
           // fallback: mark locally to display
-          const symbol = this.game?.player?.id === this.userId ? 'X' : 'O'
+          const symbol =
+            this.userSymbol ||
+            (this.game?.player?.id === this.userId ? this.playerSymbol : this.opponentSymbol) ||
+            'X'
           this.boardStateRaw[rowIndex][colIndex] = symbol
         }
         if (this.isFinished) {
@@ -446,11 +772,8 @@ export default {
       const normalized = this.extractCellValue(cell)
       if (this.isCellEmpty(normalized)) return ''
 
-      const playerId = this.game?.player?.id
-      const opponentId = this.game?.opponent?.id
-
-      if (normalized === playerId) return 'X'
-      if (normalized === opponentId) return 'O'
+      if (this.idsMatch(normalized, this.playerId)) return this.playerSymbol || 'X'
+      if (this.idsMatch(normalized, this.opponentId)) return this.opponentSymbol || 'O'
 
       if (normalized === 1 || normalized === '1') return 'X'
       if (normalized === 2 || normalized === '2') return 'O'
@@ -477,6 +800,7 @@ export default {
       if (!code) return
       try {
         await navigator.clipboard.writeText(code)
+        this.toast.show('Copié !', { variant: 'success' })
       } catch {
         // ignore
       }
@@ -540,40 +864,42 @@ export default {
 </script>
 
 <template>
-  <main class="page">
-    <section v-if="game" class="panel topbar-card">
-      <div class="topbar">
-        <div>
-          <p class="eyebrow">Partie</p>
-          <div class="code-line">
-            <span class="title-lg">Code</span>
-            <button type="button" class="badge" @click="copyCode(game.code)">
-              {{ game.code }}
-            </button>
-            <button type="button" class="btn ghost" @click="copyCode(game.code)">Copier</button>
-          </div>
-          <p class="subtitle">
-            {{ game.player?.name || 'Joueur 1' }}
-            <span class="muted">vs</span>
-            {{ game.opponent?.name || 'En attente' }}
-          </p>
+  <main class="page game">
+    <BaseCard v-if="game" class="game-header fade-in" dense>
+      <div class="header-left">
+        <p class="eyebrow">Partie</p>
+        <div class="code-line">
+          <span class="label">Code</span>
+          <CodePill :code="game.code" />
+          <BaseButton variant="icon" aria-label="Copier" @click="copyCode(game.code)">
+            <Copy class="icon" aria-hidden="true" />
+          </BaseButton>
         </div>
-        <RouterLink class="btn danger ghost" to="/home">Quitter</RouterLink>
+        <p class="players-line">
+          <span class="player truncate">{{ playerName }}</span>
+          <span class="muted">vs</span>
+          <span class="player truncate">{{ opponentName }}</span>
+        </p>
       </div>
-    </section>
+      <BaseButton variant="danger" to="/home">
+        <DoorOpen class="icon" aria-hidden="true" />
+        Quitter
+      </BaseButton>
+    </BaseCard>
 
-    <section class="status-grid">
-      <div class="panel board-card">
+    <section v-if="game" class="game-grid">
+      <BaseCard class="board-card">
         <div v-if="game && !game.opponent" class="waiting-card">
-          <div class="loader" />
-          <div>
-            <p class="title-lg">En attente d'un adversaire...</p>
+          <Loader2 class="icon spin" aria-hidden="true" />
+          <div class="waiting-content">
+            <p class="title-lg">En attente d'un adversaire</p>
             <p class="subtitle">Partage le code ci-dessus à ton adversaire.</p>
             <div class="code-share">
-              <button type="button" class="badge" @click="copyCode(game.code)">
-                {{ game.code }}
-              </button>
-              <button type="button" class="btn ghost" @click="copyCode(game.code)">Copier</button>
+              <CodePill :code="game.code" />
+              <BaseButton variant="secondary" @click="copyCode(game.code)">
+                <Copy class="icon" aria-hidden="true" />
+                Copier
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -586,7 +912,14 @@ export default {
             :class="[
               'cell',
               symbolClass(cell),
-              { waiting: !isPlayerTurn || isPlaying, winning: isWinningCell(Math.floor(idx / 3), idx % 3) },
+              {
+                disabled:
+                  !isCellEmpty(rawBoard[Math.floor(idx / 3)][idx % 3]) ||
+                  !isPlayerTurn ||
+                  isFinished ||
+                  isPlaying,
+                winning: isWinningCell(Math.floor(idx / 3), idx % 3),
+              },
             ]"
             :disabled="
               !isCellEmpty(rawBoard[Math.floor(idx / 3)][idx % 3]) ||
@@ -599,35 +932,35 @@ export default {
             <span class="symbol">{{ cell }}</span>
           </button>
         </div>
-      </div>
+      </BaseCard>
 
-      <div class="panel status-card">
+      <BaseCard class="status-card">
         <p class="eyebrow">Statut</p>
-        <h2 class="title-lg">Au tour de {{ currentPlayerName || '...' }}</h2>
-        <p class="subtitle" v-if="isPlayerTurn">C'est votre tour de jouer.</p>
+        <h2 class="title-lg">{{ turnTitle }}</h2>
+        <p class="subtitle" v-if="isPlayerTurn">À votre tour.</p>
         <p class="subtitle" v-else>En attente de votre tour...</p>
 
         <div class="status-row">
-          <span class="pill live">Tour actuel</span>
-          <span class="value">{{ currentPlayerName || '...' }}</span>
+          <BaseBadge tone="live">Tour actuel</BaseBadge>
+          <span class="value truncate">{{ currentTurnValue }}</span>
         </div>
         <div class="status-row">
-          <span class="pill">Votre symbole</span>
-          <span class="value symbol accent">{{ game?.player?.id === userId ? 'X' : 'O' }}</span>
+          <BaseBadge>Votre symbole</BaseBadge>
+          <span class="value symbol" :class="symbolClass(userSymbol)">{{ userSymbol || '...' }}</span>
         </div>
         <div class="status-row">
-          <span class="pill">Adversaire</span>
-          <span class="value">{{ game?.opponent?.name || 'En attente' }}</span>
+          <BaseBadge>Adversaire</BaseBadge>
+          <span class="value truncate">{{ adversaryName }}</span>
         </div>
-      </div>
+      </BaseCard>
     </section>
 
-    <div v-if="game && isFinished" class="panel end">
+    <BaseCard v-if="game && isFinished" class="end-card">
       <p v-if="endMessage" class="title-lg">{{ endMessage }}</p>
       <p v-else-if="winnerName">Partie terminée, {{ winnerName }} a gagné.</p>
       <p v-else>Partie terminée, match nul.</p>
-      <RouterLink class="btn secondary" to="/home">Retour à l'accueil</RouterLink>
-    </div>
+      <BaseButton variant="secondary" to="/home">Retour à l'accueil</BaseButton>
+    </BaseCard>
 
     <ErrorsDisplay :errors="errors" />
 
@@ -636,7 +969,7 @@ export default {
         <p class="modal-title">{{ endModalTitle }}</p>
         <p class="modal-text">{{ endModalText }}</p>
         <div class="modal-actions">
-          <RouterLink class="btn secondary" to="/home">Quitter</RouterLink>
+          <BaseButton variant="secondary" to="/home">Quitter</BaseButton>
         </div>
       </div>
     </div>
@@ -644,134 +977,178 @@ export default {
 </template>
 
 <style scoped>
-.topbar-card {
-  margin-bottom: 18px;
+.game {
+  display: grid;
+  gap: 18px;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-left {
+  display: grid;
+  gap: 6px;
 }
 
 .code-line {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.muted {
+.label {
+  font-weight: 600;
   color: var(--muted);
+  font-size: 14px;
 }
 
-.status-grid {
+.players-line {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.player {
+  font-weight: 600;
+}
+
+.truncate {
+  max-width: clamp(120px, 20vw, 220px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-grid {
   display: grid;
   gap: 18px;
 }
 
 @media (min-width: 960px) {
-  .status-grid {
+  .game-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
     align-items: start;
   }
 }
 
 .board-card {
-  min-height: 360px;
+  min-height: 420px;
+  display: grid;
+  place-items: center;
+}
+
+.waiting-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.waiting-content {
+  display: grid;
+  gap: 10px;
+}
+
+.code-share {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .grid-board {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .cell {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
+  aspect-ratio: 1 / 1;
   border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.cell .symbol {
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
+  place-items: center;
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 700;
   color: var(--text);
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
 }
 
-.cell.symbol-x .symbol {
-  color: var(--primary2);
-  text-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+.cell:hover:not(.disabled) {
+  border-color: color-mix(in srgb, var(--accent-cyan) 50%, transparent);
+  box-shadow: 0 0 0 3px rgba(106, 228, 255, 0.2);
+  transform: translateY(-2px);
 }
 
-.cell.symbol-o .symbol {
-  color: var(--primary);
-  text-shadow: 0 0 16px rgba(124, 92, 255, 0.35);
+.cell.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 .cell.winning {
-  border-color: var(--primary2);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+  border-color: color-mix(in srgb, var(--accent-cyan) 60%, transparent);
+  box-shadow: 0 0 0 3px rgba(106, 228, 255, 0.25);
 }
 
-.waiting-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.symbol {
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
 }
 
-.code-share {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+.symbol-x .symbol,
+.value.symbol.symbol-x {
+  color: var(--accent-pink);
+}
+
+.symbol-o .symbol,
+.value.symbol.symbol-o {
+  color: var(--accent-cyan);
 }
 
 .status-card {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .status-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+.value {
   font-weight: 600;
-  font-size: 14px;
 }
 
-.pill.live::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--primary2);
-  box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.2);
-}
-
-.value.symbol.accent {
-  color: var(--primary2);
+.value.symbol {
   font-weight: 700;
 }
 
-.end {
-  margin-top: 18px;
+.end-card {
+  text-align: center;
   display: grid;
   gap: 12px;
-  text-align: center;
 }
 
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(5, 8, 16, 0.6);
   display: grid;
   place-items: center;
   z-index: 1000;
@@ -779,26 +1156,53 @@ export default {
 }
 
 .modal {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: rgba(13, 17, 30, 0.96);
+  color: var(--text);
   border-radius: 16px;
   padding: 20px 22px;
   width: min(440px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
   display: grid;
   gap: 10px;
+  backdrop-filter: blur(14px);
 }
 
-.modal .modal-title {
+.modal-title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
 }
 
-.modal .modal-actions {
+.modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .game-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .board-card {
+    min-height: 360px;
+  }
 }
 </style>

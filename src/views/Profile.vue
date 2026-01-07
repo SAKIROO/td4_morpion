@@ -1,11 +1,17 @@
 <script>
 import api from '@/api'
 import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 export default {
   name: 'ProfileView',
   components: {
     ErrorsDisplay,
+    BaseCard,
+    BaseInput,
+    BaseButton,
   },
   data() {
     return {
@@ -53,50 +59,59 @@ export default {
 </script>
 
 <template>
-  <main class="page">
-    <section class="panel card">
+  <main class="page profile">
+    <BaseCard class="profile-card fade-in">
       <div class="card-header">
         <div class="avatar">{{ user?.name?.[0]?.toUpperCase() || 'U' }}</div>
         <div>
           <p class="eyebrow">Profil</p>
-          <h1 class="title-lg">Mon profil</h1>
+          <h1 class="title-xl">Mon profil</h1>
           <p class="subtitle">Visible par ton adversaire pendant la partie.</p>
         </div>
-        <RouterLink class="btn ghost close" to="/home" aria-label="Retour à l'accueil">Retour</RouterLink>
       </div>
 
       <form v-if="user" class="form" @submit.prevent="saveProfile">
-        <label class="input-group">
-          <span>Surnom</span>
-          <input v-model="user.name" class="input" type="text" autocomplete="nickname" />
-          <small class="hint">Visible par ton adversaire</small>
-        </label>
-        <label class="input-group">
-          <span>Email</span>
-          <input v-model="user.email" class="input" type="email" autocomplete="email" />
-        </label>
-        <button type="submit" class="btn primary" :disabled="isSaving">Enregistrer</button>
+        <BaseInput
+          v-model="user.name"
+          label="Pseudo"
+          type="text"
+          autocomplete="nickname"
+          hint="Visible par ton adversaire."
+        />
+        <BaseInput
+          v-model="user.email"
+          label="Email"
+          type="email"
+          autocomplete="email"
+        />
+        <BaseButton type="submit" variant="primary" :loading="isSaving" :disabled="isSaving">
+          Enregistrer
+        </BaseButton>
       </form>
 
       <p v-else class="subtitle">Chargement du profil...</p>
 
       <ErrorsDisplay :errors="errors" />
-    </section>
+    </BaseCard>
   </main>
 </template>
 
 <style scoped>
-.card {
-  max-width: 560px;
+.profile {
+  display: grid;
+}
+
+.profile-card {
+  max-width: 620px;
   margin: 0 auto;
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .card-header {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 12px;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
   align-items: center;
 }
 
@@ -104,20 +119,16 @@ export default {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(142, 243, 255, 0.4), rgba(255, 124, 229, 0.3));
+  background: linear-gradient(135deg, rgba(106, 228, 255, 0.35), rgba(255, 122, 217, 0.35));
   color: var(--text);
   font-weight: 700;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
 }
 
 .form {
   display: grid;
   gap: 14px;
-}
-
-.close {
-  height: fit-content;
 }
 </style>

@@ -1,11 +1,19 @@
 <script>
 import api from '@/api'
 import ErrorsDisplay from '@/components/ErrorsDisplay.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import { LogIn } from 'lucide-vue-next'
 
 export default {
   name: 'JoinView',
   components: {
     ErrorsDisplay,
+    BaseCard,
+    BaseInput,
+    BaseButton,
+    LogIn,
   },
   data() {
     return {
@@ -14,9 +22,21 @@ export default {
       isJoining: false,
     }
   },
+  computed: {
+    isCodeValid() {
+      return /^[A-Z0-9]{6}$/.test(this.code)
+    },
+  },
+  watch: {
+    code(value) {
+      if (!value) return
+      const normalized = value.toUpperCase().replace(/\s+/g, '')
+      if (normalized !== value) this.code = normalized
+    },
+  },
   methods: {
     async joinGame() {
-      if (!this.code || this.isJoining) return
+      if (!this.isCodeValid || this.isJoining) return
       this.errors = []
       this.isJoining = true
       try {
@@ -36,63 +56,67 @@ export default {
 </script>
 
 <template>
-  <main class="page">
-    <section class="panel card">
+  <main class="page join">
+    <BaseCard class="card fade-in">
       <div class="card-header">
-        <div class="avatar">↗</div>
+        <div class="avatar">
+          <LogIn class="icon" aria-hidden="true" />
+        </div>
         <div>
           <p class="eyebrow">Rejoindre</p>
-          <h1 class="title-lg">Rejoindre une partie</h1>
+          <h1 class="title-xl">Rejoindre une partie</h1>
           <p class="subtitle">Entre le code partagé par ton adversaire.</p>
         </div>
-        <RouterLink class="btn ghost close" to="/home" aria-label="Retour à l'accueil">Retour</RouterLink>
       </div>
 
       <form class="form" @submit.prevent="joinGame">
-        <label class="input-group">
-          <span>Code</span>
-          <input
-            v-model.trim="code"
-            type="text"
-            class="input code-input"
-            autocapitalize="characters"
-            maxlength="6"
-            placeholder="Ex: V9M53Z"
-          />
-          <small class="hint">Ex: N7UJBE</small>
-        </label>
-        <button type="submit" class="btn primary" :disabled="isJoining || !code">Rejoindre</button>
+        <BaseInput
+          v-model.trim="code"
+          label="Code"
+          placeholder="Ex : V9M53Z"
+          autocapitalize="characters"
+          maxlength="6"
+          hint="Ex : N7UJBE"
+          class="code-input"
+        />
+        <BaseButton
+          type="submit"
+          variant="primary"
+          :loading="isJoining"
+          :disabled="isJoining || !isCodeValid"
+        >
+          <LogIn class="icon" aria-hidden="true" />
+          Rejoindre
+        </BaseButton>
       </form>
 
       <ErrorsDisplay :errors="errors" />
-    </section>
+    </BaseCard>
   </main>
 </template>
 
 <style scoped>
-.card {
-  max-width: 520px;
-  margin: 0 auto;
+.join {
   display: grid;
-  gap: 16px;
 }
 
 .card-header {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 12px;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
   align-items: center;
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: linear-gradient(120deg, rgba(124, 92, 255, 0.35), rgba(34, 211, 238, 0.25));
+  background: linear-gradient(120deg, rgba(124, 92, 255, 0.25), rgba(72, 209, 255, 0.25));
   display: grid;
   place-items: center;
   font-weight: 700;
   color: var(--text);
+  border: 1px solid var(--border-subtle);
 }
 
 .form {
@@ -100,14 +124,15 @@ export default {
   gap: 14px;
 }
 
-.code-input {
+.code-input :deep(input) {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   text-align: center;
-  font-family: 'Space Mono', 'Inter', monospace;
+  font-family: var(--font-mono);
 }
 
-.close {
-  height: fit-content;
+.icon {
+  width: 18px;
+  height: 18px;
 }
 </style>
