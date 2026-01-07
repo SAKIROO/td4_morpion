@@ -2,12 +2,12 @@
 
 Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et �dition du profil.
 
-## Aper�u
+## Aperçu
 - UI/UX moderne (glassmorphism, layout dense, responsive)
 - Temps réel via WebSockets + fallback polling
 - Profils joueurs + noms dynamiques
 
-## Pr�-requis
+## Pré-requis
 - Node.js 20+ (voir `package.json` > `engines`)
 - npm (fourni avec Node)
 - Une clé API personnelle : `/api/apikeys` sur https://morpion-api.edu.netlor.fr (renseigner `name` et `email`)
@@ -18,7 +18,7 @@ Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jou
 ```env
 VITE_MORPION_API_KEY=VOTRE_CLE_ICI
 ```
-Chaque d�veloppeur doit utiliser sa propre cl�.
+Chaque développeur doit utiliser sa propre clé.
 
 ## Installation
 ```sh
@@ -29,10 +29,10 @@ npm install
 ```sh
 npm run dev
 ```
-Vite affiche ensuite l'URL locale (par d�faut `http://localhost:5173`).
+Vite affiche ensuite l'URL locale (par défaut `http://localhost:5173`).
 Ouvrir deux onglets/navigateurs pour simuler deux joueurs.
 
-### Lancer un 2e joueur (autre cl� API)
+### Lancer un 2e joueur (autre clé API)
 ```sh
 VITE_MORPION_API_KEY='VOTRE_AUTRE_CLE' npm run dev -- --port 5174
 ```
@@ -61,6 +61,6 @@ Exemple d'insertion (remplacera automatiquement quand les fichiers existent) :
 ![Partie en attente](docs/screenshots/02-lobby.png)
 ![Partie en cours](docs/screenshots/03-game.png)
 
-## D�pannage rapide
+## Dépannage rapide
 - Si la clé API est invalide, régénérez-la sur https://morpion-api.edu.netlor.fr
 - En cas d'erreur de version Node, mettez à jour Node.js pour respecter `engines`
