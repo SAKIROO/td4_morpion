@@ -689,7 +689,6 @@ export default {
             this.stopPollingGame()
           }
         } catch {
-          // Silently ignore to keep retrying
         }
       }, 2000)
     },
@@ -714,7 +713,6 @@ export default {
         this.game = payload
         this.setBoardFromGame(payload)
         if (!this.hasGridContent(this.boardStateRaw)) {
-          // fallback: mark locally to display
           const symbol =
             this.userSymbol ||
             (this.game?.player?.id === this.userId ? this.playerSymbol : this.opponentSymbol) ||
@@ -802,7 +800,6 @@ export default {
         await navigator.clipboard.writeText(code)
         this.toast.show('Copié !', { variant: 'success' })
       } catch {
-        // ignore
       }
     },
     async startRematch() {
