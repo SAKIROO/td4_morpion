@@ -1,7 +1,7 @@
 # Morpion (TD4 VueJS)
 
 Application Vue 3 / Vue Router pour le TD4 : création de parties, rejoindre/jouer via WebSockets et édition du profil.
-##Réalisé par Robin Carette & Noé Franoux
+## Réalisé par Robin Carette & Noé Franoux
 
 ## Aperçu
 - UI/UX moderne (glassmorphism, layout dense, responsive)
